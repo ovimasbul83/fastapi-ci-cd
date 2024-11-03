@@ -35,19 +35,24 @@ jobs:
       - name: Copy files to GCP VM
         run: |
           INSTANCE_NAME=instance-20241103-080640
-          VM_ZONE=us-central1-a  # Replace with your VM's zone
-          APP_DIR=/home/mashovi06/app
+          VM_ZONE=us-central1-a
+          LOCAL_USER=mashovi06
+          APP_DIR=/home/$LOCAL_USER/app
           
-          # Create directory with instance name
-          gcloud compute ssh $INSTANCE_NAME --zone=$VM_ZONE --command "mkdir -p $APP_DIR"
+          # First, create directory as the correct user
+          gcloud compute ssh $LOCAL_USER@$INSTANCE_NAME --zone=$VM_ZONE --quiet \
+            --command "mkdir -p $APP_DIR"
           
-          # Copy files with instance name
-          gcloud compute scp --zone=$VM_ZONE --recurse ./* $INSTANCE_NAME:$APP_DIR
+          # Copy files with correct user permissions
+          gcloud compute scp --zone=$VM_ZONE --quiet \
+            --recurse ./* $LOCAL_USER@$INSTANCE_NAME:$APP_DIR
           
       - name: Restart FastAPI Service
         run: |
           INSTANCE_NAME=instance-20241103-080640
-          VM_ZONE=us-central1-a  # Replace with your VM's zone
+          VM_ZONE=us-central1-a
+          LOCAL_USER=mashovi06
           
-          # Restart service with instance name
-          gcloud compute ssh $INSTANCE_NAME --zone=$VM_ZONE --command "sudo systemctl restart fastapi"
+          # Restart service (using sudo with the correct user)
+          gcloud compute ssh $LOCAL_USER@$INSTANCE_NAME --zone=$VM_ZONE --quiet \
+            --command "sudo systemctl restart fastapi"
