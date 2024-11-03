@@ -35,9 +35,9 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-key.json
         run: |
-          VM_IP=YOUR_GCP_VM_IP  # Replace with your VM IP
-          VM_USER=YOUR_VM_USERNAME  # Replace with your VM username
-          APP_DIR=/path/to/app  # Replace with the actual path on the VM
+          VM_IP=34.69.164.156  # Replace with your GCP VM IP
+          VM_USER=instance-20241103-080640  # Replace with your VM username
+          APP_DIR=/home/mashovi06/app  # Destination on VM
 
           gcloud compute ssh $VM_USER@$VM_IP --command "mkdir -p $APP_DIR"
           gcloud compute scp --recurse ./* $VM_USER@$VM_IP:$APP_DIR
@@ -46,7 +46,7 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-key.json
         run: |
-          VM_IP=YOUR_GCP_VM_IP  # Replace with your VM IP
-          VM_USER=YOUR_VM_USERNAME  # Replace with your VM username
+          VM_IP=34.69.164.156
+          VM_USER=instance-20241103-080640  # Replace with your VM username
 
-          gcloud compute ssh $VM_USER@$VM_IP --command "sudo systemctl restart fastapi"  # Ensure service name is correct
+          gcloud compute ssh $VM_USER@$VM_IP --command "sudo systemctl restart fastapi"
