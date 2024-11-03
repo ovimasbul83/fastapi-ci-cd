@@ -36,12 +36,20 @@ jobs:
         run: |
           VM_IP=34.69.164.156
           VM_USER=instance-20241103-080640
+          VM_ZONE=us-central1-a  # Replace with your VM's zone
           APP_DIR=/home/mashovi06/app
-          gcloud compute ssh $VM_USER@$VM_IP --command "mkdir -p $APP_DIR"
-          gcloud compute scp --recurse ./* $VM_USER@$VM_IP:$APP_DIR
+          
+          # Create directory with zone specified
+          gcloud compute ssh $VM_USER@$VM_IP --zone=$VM_ZONE --command "mkdir -p $APP_DIR"
+          
+          # Copy files with zone specified
+          gcloud compute scp --zone=$VM_ZONE --recurse ./* $VM_USER@$VM_IP:$APP_DIR
           
       - name: Restart FastAPI Service
         run: |
           VM_IP=34.69.164.156
           VM_USER=instance-20241103-080640
-          gcloud compute ssh $VM_USER@$VM_IP --command "sudo systemctl restart fastapi"
+          VM_ZONE=us-central1-a  # Replace with your VM's zone
+          
+          # Restart service with zone specified
+          gcloud compute ssh $VM_USER@$VM_IP --zone=$VM_ZONE --command "sudo systemctl restart fastapi"
