@@ -1,53 +1,53 @@
-# .github/workflows/ci-cd.yml
-name: CI/CD Pipeline
+name: Deploy FastAPI to GCP VM
 
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
+      - main  # Trigger on the main branch
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.9'  # Match the Python version on your GCP VM
 
       - name: Install dependencies
         run: |
-          pip install -r app/requirements.txt
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Run tests
-        run: |
-          # Here you can add your test command, e.g. pytest
-          echo "No tests defined yet."
-
-      - name: Upload code to GCP VM
+      - name: Authenticate with Google Cloud
         env:
-          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}  # Service Account Key in JSON format
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-key.json
         run: |
-          echo "$GOOGLE_SA_KEY" > gcp-key.json
-          gcloud auth activate-service-account --key-file=gcp-key.json
-          gcloud config set project your-project-id
-          gcloud compute scp --recurse app/ your-vm-instance-name:~/app --zone your-vm-zone
+          echo "${{ secrets.GCP_SA_KEY }}" > $GOOGLE_APPLICATION_CREDENTIALS
+          gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+          gcloud config set project project-insomniacs  # Replace with your project ID
 
-      - name: SSH into GCP VM and run the FastAPI app
+      - name: Copy files to GCP VM
         env:
-          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}  # Service Account Key in JSON format
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-key.json
         run: |
-          echo "$GOOGLE_SA_KEY" > gcp-key.json
-          gcloud auth activate-service-account --key-file=gcp-key.json
-          gcloud compute ssh your-vm-instance-name --zone your-vm-zone --command "
-            cd ~/app && \
-            pip install -r requirements.txt && \
-            nohup uvicorn main:app --host 0.0.0.0 --port 8000 > fastapi.log 2>&1 &
-          "
+          VM_IP=YOUR_GCP_VM_IP
+          VM_USER=YOUR_VM_USERNAME
+          APP_DIR=/path/to/app  # Destination on VM
+
+          echo "${{ secrets.GCP_SA_KEY }}" > $GOOGLE_APPLICATION_CREDENTIALS
+          gcloud compute ssh $VM_USER@$VM_IP --command "mkdir -p $APP_DIR"
+          gcloud compute scp --recurse ./* $VM_USER@$VM_IP:$APP_DIR
+
+      - name: Restart FastAPI Service
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-key.json
+        run: |
+          VM_IP=YOUR_GCP_VM_IP
+          VM_USER=YOUR_VM_USERNAME
+
+          gcloud compute ssh $VM_USER@$VM_IP --command "sudo systemctl restart fastapi"
